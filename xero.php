@@ -338,6 +338,13 @@ class Xero {
 		return $this->$name();
 	}
 
+	public function verify() {
+		if (!isset($this->consumer) || !isset($this->token) || !isset($this->signature_method)) {
+			return false;
+		}
+		return true;
+	}
+
 }
 
 //END Xero class
