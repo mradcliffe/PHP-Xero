@@ -189,20 +189,30 @@ class Xero {
 
 	public function __call($name, $arguments) {
 		$name = strtolower($name);
-		$valid_methods = array('accounts','contacts','creditnotes','currencies','invoices','organisation','payments','taxrates','trackingcategories');
-		$valid_post_methods = array('contacts','creditnotes','invoices');
-		$valid_put_methods = array('payments');
-		$valid_get_methods = array('contacts','creditnotes','invoices','accounts','currencies','organisation','taxrates','trackingcategories');
+		$valid_methods = array('accounts','banktransactions','brandingthemes','contacts','creditnotes','currencies','employees','expenseclaims','invoices','items','journals','manualjournals','organisation','payments','receipts','taxrates','trackingcategories','types','users');
+		$valid_post_methods = array('banktransactions','contacts','creditnotes','employees','expenseclaims','invoices','items','manualjournals','receipts','banktransactions');
+		$valid_put_methods = array('banktransactions','contacts','creditnotes','employees','expenseclaims','invoices','items','manualjournals','payments','receipts');
+		$valid_get_methods = array('accounts','banktransactions','brandingthemes','contacts','creditnotes','currencies','employees','expenseclaims','invoices','items','journals','manualjournals','organisation','payments','receipts','taxrates','trackingcategories','types','users');
 		$methods_map = array(
 			'accounts' => 'Accounts',
+			'banktransactions' => 'BankTransactions',
+			'brandingthemes' => 'BrandingThemes',
 			'contacts' => 'Contacts',
 			'creditnotes' => 'CreditNotes',
 			'currencies' => 'Currencies',
+			'employees' => 'Employees',
+			'expenseclaims' => 'ExpenseClaims',
 			'invoices' => 'Invoices',
+			'items' => 'Items',
+			'journals' => 'Journals',
+			'manualjournals' => 'ManualJournals',
 			'organisation' => 'Organisation',
 			'payments' => 'Payments',
+			'receipts' => 'Receipts',
 			'taxrates' => 'TaxRates',
-			'trackingcategories' => 'TrackingCategories'
+			'trackingcategories' => 'TrackingCategories',
+			'types' => 'Types',
+			'users' => 'Users',
 		);
 		if ( !in_array($name,$valid_methods) ) {
 			return false;
