@@ -1210,7 +1210,8 @@ class ArrayToXML
             } else {
 
                 // add single node.
-                $xml->$key = $value;
+                $value = str_replace( '&', '&amp;', $value );
+                $xml->addChild( $key, $value );
             }
         }
 
