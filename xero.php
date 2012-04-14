@@ -1210,7 +1210,7 @@ class ArrayToXML
             } else {
 
                 // add single node.
-                $value = str_replace( '&', '&amp;', $value );
+                $value = htmlentities( $value, ENT_NOQUOTES, 'UTF-8', FALSE );
                 $xml->addChild( $key, $value );
             }
         }
