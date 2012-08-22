@@ -5,8 +5,8 @@
 
 	Project Name: PHP Xero
 	Class Name: Xero
-	Author: David Pitman (dependent on the work of others - see below)
-	Date: April 2010
+	Author: Ronan Quirke, Xero (dependent on the work of others, mainly David Pitman - see below)
+	Date: May 2012
 
 	Description:
 	A class for interacting with the xero (xero.com) private application API.  It could also be used for the public application API too, but it hasn't been tested with that.  More documentation for Xero can be found at http://blog.xero.com/developer/api-overview/  It is suggested you become familiar with the API before using this class, otherwise it may not make much sense to you - http://blog.xero.com/developer/api/
@@ -21,6 +21,7 @@
 
 	Copyright (c) 2007 Andy Smith (Oauth*)
 	Copyright (c) 2010 David Pitman (Xero)
+	Copyright (c) 2012 Ronan Quirke, Xero (Xero)
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -40,121 +41,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 
-	---
-
-	Usage Summary:
-
-	Basically instantiate the Xero class with your credentials and desired output format.  Then call any of the methods as outlined in the API.  Calling an API method name as a property is the same as calling that API method with no options. Calling the API method as a method with an array as the only input param with like calling the corresponding POST or PUT API method.  You can make more complex GET requests using up to four params on the method.  If you have read the xero api documentation, it should be clear.
-
-	Example Usage:
-
-//include the class files
-include_once "Xero.php";
-
-//define your application key and secret (find these at https://api.xero.com/Application)
-define('XERO_KEY','[APPLICATION KEY]');
-define('XERO_SECRET','[APPLICATION SECRET]');
-
-//instantiate the Xero class with your key, secret and paths to your RSA cert and key
-//the last argument is optional and may be either "xml" or "json" (default)
-//"xml" will give you the result as a SimpleXMLElement object, while 'json' will give you a plain array object
-$xero = new Xero(XERO_KEY, XERO_SECRET, [path to public certificate], [path to private key] ), 'xml' );
-
-//the input format for creating a new contact see http://blog.xero.com/developer/api/contacts/ to understand more
-$new_contact = array(
-	array(
-		"Name" => "API TEST Contact",
-		"FirstName" => "TEST",
-		"LastName" => "Contact",
-		"Addresses" => array(
-			"Address" => array(
-				array(
-					"AddressType" => "POSTAL",
-					"AddressLine1" => "PO Box 100",
-					"City" => "Someville",
-					"PostalCode" => "3890"
-				),
-				array(
-					"AddressType" => "STREET",
-					"AddressLine1" => "1 Some Street",
-					"City" => "Someville",
-					"PostalCode" => "3890"
-				)
-			)
-		)
-	)
-);
-
-//the input format for creating a new invoice (or credit note) see http://blog.xero.com/developer/api/invoices/
-$new_invoice = array(
-	array(
-		"Type"=>"ACCREC",
-		"Contact" => array(
-			"ContactID" => "[contact id]"
-		),
-		"Date" => "2010-04-08",
-		"DueDate" => "2010-04-30",
-		"Status" => "SUBMITTED",
-		"LineAmountTypes" => "Exclusive",
-		"LineItems"=> array(
-			"LineItem" => array(
-				array(
-					"Description" => "Just another test invoice",
-					"Quantity" => "2.0000",
-					"UnitAmount" => "250.00",
-					"AccountCode" => "200"
-				)
-			)
-		)
-	)
-);
-
-//the input format for creating a new payment see http://blog.xero.com/developer/api/payments/ to understand more
-$new_payment = array(
-	array(
-		"Invoice" => array(
-			"InvoiceNumber" => "INV-0002"
-		),
-		"Account" => array(
-			"Code" => "[account code]"
-		),
-		"Date" => "2010-04-09",
-		"Amount"=>"100.00",
-	)
-);
-
-
-//raise an invoice
-$invoice_result = $xero->Invoices( $new_invoice );
-
-//apply a payment to an invoice - the invoice must be first approved via the human interface as at April 2010
-//see http://xero.uservoice.com/forums/5528-xero-api/suggestions/72870-be-able-to-approve-and-send-invoices-via-the-api
-$payment_result = $xero->Payments( $new_payment );
-
-//get details of an account, with the name "Test Account"
-$result = $xero->Accounts(false, false, array("Name"=>"Test Account") );
-//the params above correspond to the "Optional params for GET Accounts" on http://blog.xero.com/developer/api/accounts/
-//to do a GET request, all params are optional
-//first param should be a boolean "false" or a string AccountID,
-//second param  should be a date/time, in any format
-//third param can be an array of filters, with array keys being filter fields (left of operand), and array values
-//being the right of operand values.  The array value can be a string or an array(operand, value), or a boolean
-//the whole third param can also be a string using the format described at
-// http://blog.xero.com/developer/api-overview/http-methods-and-filters/ in the Filters section
-//the fourth param (optional) is a string field name to order by
-//to do a POST request, the first and only param must be a multidimensional array as shown above in $new_contact etc.
-
-//get details of all accounts
-$all_accounts = $xero->Accounts;
-
-//echo the results back
-if ( is_object($result) ) {
-	//use this to see the source code if the $format option is "xml"
-	echo htmlentities($result->asXML()) . "<hr />";
-} else {
-	//use this to see the source code if the $format option is "json" or not specified
-	echo json_encode($result) . "<hr />";
-}
+	
 
 */
 
@@ -176,11 +63,14 @@ class Xero {
 		$this->public_cert = $public_cert;
 		$this->private_key = $private_key;
 		if ( !($this->key) || !($this->secret) || !($this->public_cert) || !($this->private_key) ) {
+			error_log('Stuff missing ');
 			return false;
 		}
-		if ( !file_exists($this->public_cert) || !file_exists($this->private_key) ) {
-			return false;
-		}
+		if(!file_exists($this->public_cert))
+		throw new XeroException('Public cert does not exist: ' . $this->public_cert);
+		if(!file_exists($this->private_key))
+		throw new XeroException('Private key does not exist: ' . $this->private_key);
+		
 		$this->consumer = new OAuthConsumer($this->key, $this->secret);
 		$this->token = new OAuthToken($this->key, $this->secret);
 		$this->signature_method  = new OAuthSignatureMethod_Xero($this->public_cert, $this->private_key);
@@ -214,7 +104,7 @@ class Xero {
 			'users' => 'Users',
 		);
 		if ( !in_array($name,$valid_methods) ) {
-			return false;
+			throw new XeroException('The selected method does not exist. Please use one of the following methods: '.implode(', ',$methods_map));
 		}
 		if ( (count($arguments) == 0) || ( is_string($arguments[0]) ) || ( is_numeric($arguments[0]) ) || ( $arguments[0] === false ) ) {
 			//it's a GET request
@@ -245,6 +135,7 @@ class Xero {
 				$where = strip_tags(strval($where));
 			}
 			$order = ( count($arguments) > 3 ) ? strip_tags(strval($arguments[3])) : false;
+			$acceptHeader = ( !empty( $arguments[4] ) ) ? $arguments[4] : '';
 			$method = $methods_map[$name];
 			$xero_url = self::ENDPOINT . $method;
 			if ( $filterid ) {
@@ -259,21 +150,44 @@ class Xero {
 			$req  = OAuthRequest::from_consumer_and_token( $this->consumer, $this->token, 'GET',$xero_url);
 			$req->sign_request($this->signature_method , $this->consumer, $this->token);
 			$ch = curl_init();
+			if ( $acceptHeader=='pdf' ) {
+				curl_setopt($ch,CURLOPT_HTTPHEADER,
+						array (
+							"Accept: application/".$acceptHeader
+						)
+					);
+				}
 			curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
 			curl_setopt($ch, CURLOPT_URL, $req->to_url());
 			if ( $modified_after ) {
-				curl_setopt($ch, CURLOPT_HEADER, "If-Modified-Since: $modified_after");
+				curl_setopt($ch, CURLOPT_HEADER, array("If-Modified-Since: $modified_after"));
 			}
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			$temp_xero_response = curl_exec($ch);
-			$xero_xml = simplexml_load_string( $temp_xero_response );
 			curl_close($ch);
-			if ( !$xero_xml ) {
+			if ( $acceptHeader=='pdf' ) {
 				return $temp_xero_response;
+				
 			}
-			if ( $this->format == 'xml' ) {
+			
+			try {
+			if(@simplexml_load_string( $temp_xero_response )==false){
+				throw new XeroException($temp_xero_response);
+				$xero_xml = false;
+				}else{
+				$xero_xml = simplexml_load_string( $temp_xero_response );
+				}
+				}
+			
+			catch (XeroException $e)
+				  {
+				  return $e->getMessage() . "<br/>";
+				  }
+			
+
+			if ( $this->format == 'xml' && isset($xero_xml) ) {
 				return $xero_xml;
-			} else {
+			} elseif(isset($xero_xml)) {
 				return ArrayToXML::toArray( $xero_xml );
 			}
 		} elseif ( (count($arguments) == 1) || ( is_array($arguments[0]) ) || ( is_a( $arguments[0], 'SimpleXMLElement' ) ) ) {
@@ -312,26 +226,39 @@ class Xero {
 				curl_setopt($ch, CURLOPT_INFILE, $fh);
 				curl_setopt($ch, CURLOPT_INFILESIZE, strlen($xml));
 				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-				fclose($fh);
 			}
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			$xero_response = curl_exec($ch);
-			$xero_xml = simplexml_load_string( $xero_response );
-			if (!$xero_xml) {
-				return $xero_response;
-			}
+			if (isset($fh)) fclose($fh);
+			try {
+			if(@simplexml_load_string( $xero_response )==false){
+				throw new XeroException($xero_response);
+
+				}else{
+				$xero_xml = simplexml_load_string( $xero_response );
+				}
+				}
+			
+			catch (XeroException $e)
+				  {
+				  //display custom message
+				  return $e->getMessage() . "<br/>";
+				  }
+	
 			curl_close($ch);
-			if ( !$xero_xml ) {
+			if (!isset($xero_xml) ) {
 				return false;
 			}
-			if ( $this->format == 'xml' ) {
+			if ( $this->format == 'xml' && isset($xero_xml)) {
 				return $xero_xml;
-			} else {
+			} elseif(isset($xero_xml)) {
 				return ArrayToXML::toArray( $xero_xml );
 			}
 		} else {
 			return false;
 		}
+		
+		
 	}
 
 	public function __get($name) {
@@ -1333,4 +1260,36 @@ class ArrayToXML
     public static function isAssoc( $array ) {
         return (is_array($array) && 0 !== count(array_diff_key($array, array_keys(array_keys($array)))));
     }
+}
+
+class XeroException extends Exception { }
+
+class XeroApiException extends XeroException {
+	private $xml;
+
+	public function __construct($xml_exception)
+	{
+		$this->xml = $xml_exception;
+		$xml = new SimpleXMLElement($xml_exception);
+
+		list($message) = $xml->xpath('/ApiException/Message');
+		list($errorNumber) = $xml->xpath('/ApiException/ErrorNumber');
+		list($type) = $xml->xpath('/ApiException/Type');
+
+		parent::__construct((string)$type . ': ' . (string)$message, (int)$errorNumber);
+
+		$this->type = (string)$type;
+	}
+
+	public function getXML()
+	{
+		return $this->xml;
+	}
+
+	public static function isException($xml)
+	{
+		return preg_match('/^<ApiException.*>/', $xml);
+	}
+	
+
 }
