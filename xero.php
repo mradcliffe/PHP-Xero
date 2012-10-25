@@ -101,7 +101,8 @@ class Xero {
 			'receipts' => 'Receipts',
 			'taxrates' => 'TaxRates',
 			'trackingcategories' => 'TrackingCategories',
-			'users' => 'Users',
+			'users' => 'Users'
+			
 		);
 		if ( !in_array($name,$valid_methods) ) {
 			throw new XeroException('The selected method does not exist. Please use one of the following methods: '.implode(', ',$methods_map));
@@ -112,8 +113,8 @@ class Xero {
 				return false;
 			}
 			$filterid = ( count($arguments) > 0 ) ? strip_tags(strval($arguments[0])) : false;
-			$modified_after = ( count($arguments) > 1 ) ? str_replace( 'X','T', date( 'Y-m-dXH:i:s', strtotime($arguments[1])) ) : false;
-			$where = ( count($arguments) > 2 ) ? $arguments[2] : false;
+			if($arguments[1]!=false) $modified_after = ( count($arguments) > 1 ) ? str_replace( 'X','T', date( 'Y-m-dXH:i:s', strtotime($arguments[1])) ) : false;
+			if($arguments[2]!=false) $where = ( count($arguments) > 2 ) ? $arguments[2] : false;
 			if ( is_array($where) && (count($where) > 0) ) {
 				$temp_where = '';
 				foreach ( $where as $wf => $wv ) {
@@ -141,7 +142,7 @@ class Xero {
 			if ( $filterid ) {
 				$xero_url .= "/$filterid";
 			}
-			if ( $where ) {
+			if ( isset($where) ) {
 				$xero_url .= "?where=$where";
 			}
 			if ( $order ) {
@@ -159,8 +160,8 @@ class Xero {
 				}
 			curl_setopt($ch,CURLOPT_SSL_VERIFYPEER, false);
 			curl_setopt($ch, CURLOPT_URL, $req->to_url());
-			if ( $modified_after ) {
-				curl_setopt($ch, CURLOPT_HEADER, array("If-Modified-Since: $modified_after"));
+			if ( isset($modified_after) && $modified_after != false) {
+				curl_setopt($ch, CURLOPT_HTTPHEADER, array("If-Modified-Since: $modified_after"));
 			}
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			$temp_xero_response = curl_exec($ch);
