@@ -1212,7 +1212,13 @@ class ArrayToXML
             } else {
 
                 // add single node.
-                $value = htmlentities( $value, ENT_NOQUOTES, 'UTF-8', FALSE );
+                if (defined('ENT_DISALLOWED')) {
+                    // PHP 5.4 added ENT_DISALLOWED and ENT_XML1.
+                    $value = htmlentities( $value, ENT_NOQUOTES | ENT_DISALLOWED | ENT_XML1, 'UTF-8', FALSE );
+                }
+                else {
+                    $value = self::encodeEntities( $value );
+                }
                 $xml->addChild( $key, $value );
             }
         }
@@ -1228,6 +1234,29 @@ class ArrayToXML
         //return $doc->saveXML();
     }
 
+    /**
+     * Encode entities for PHP versions less than 5.4.
+     *
+     * @param string $value the string to encode entities for.
+     * @return string the encoded string.
+     */
+    public static function encodeEntities( $value ) {
+        $encoded = '';
+
+        $chars = utf8_decode( htmlspecialchars( $value , ENT_NOQUOTES , 'UTF-8', FALSE) );
+        if (!empty($chars)) {
+            foreach (str_split( $chars ) as $char) {
+                $ordinal = ord($char);
+                if ($ordinal > 127) {
+                    $encoded .= '&#' . $ordinal;
+                } else {
+                    $encoded .= $char;
+                }
+            }
+        }
+
+        return $encoded;
+    }
 
     /**
      * Convert an XML document to a multi dimensional array
